@@ -664,7 +664,9 @@ test('Vary nudges the patch (and undoes), and Variations exports a zip of WAVs',
   const fs = require('node:fs');
   const zip = fs.readFileSync(await download.path());
   assert.equal(zip.readUInt16LE(zip.length - 22 + 10), 3);
-  assert.equal(zip.toString('latin1', 38, 42), 'RIFF', 'the first entry is a WAV');
+  const data = 30 + zip.readUInt16LE(26); // local header, then the file name
+  assert.match(zip.toString('latin1', 30, data), /-1\.wav$/);
+  assert.equal(zip.toString('latin1', data, data + 4), 'RIFF', 'the first entry is a WAV');
   assert.deepEqual(errors, []);
 });
 
