@@ -22,6 +22,9 @@ Everything else works offline.
 - **Create and Play** renders the patch, plays it and draws it on the scope. If the peak is outside
   0.5–1, the status bar suggests a Recorder volume.
 - **Save** and **Open** store patches as JSON. The current patch is also kept in your browser between visits.
+- **Open** also imports patch maps (`.pm`) saved by the original Quack. It reads Sine, Square, Sawtooth, Noise, Mixer,
+  Modulator, Sequencer, Sample and Hold, Sweep, ADSR, Envelope, Echo, Fuzz and Mono to Stereo Pan. A file that uses
+  any other component is refused with a message naming it.
 - **Export** saves the last render as WAV, FLAC, MP3 or OGG, named after the Recorder's **File name**:
   - WAV and FLAC are built in. FLAC is lossless but stored uncompressed.
   - MP3 uses [lamejs](https://github.com/zhuker/lamejs) and needs a standard MP3 sample rate, such as 22050 or 44100.
