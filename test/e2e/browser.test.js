@@ -621,3 +621,69 @@ test('Fourier Wave actions run from the panel', opts, async (t) => {
   assert.ok(amps[0] < 1 && amps[0] > 0.3, 'normalised amplitudes: ' + amps);
   assert.deepEqual(errors, []);
 });
+
+test('undo and redo edits, from the buttons and the keyboard', opts, async (t) => {
+  const { page, errors } = await openApp(t);
+  await page.click('#new');
+  await page.waitForTimeout(700); // quick edits merge into one undo step
+  const count = () => page.evaluate(() => window.QuackApp.getPatch().components.length);
+  await page.locator('#toolbar button', { hasText: /^Sine$/ }).click();
+  await page.waitForTimeout(700);
+  await page.locator('#toolbar button', { hasText: /^Square$/ }).click();
+  assert.equal(await count(), 3);
+  await page.click('#undo');
+  assert.equal(await count(), 2);
+  await page.click('#undo');
+  assert.equal(await count(), 1);
+  await page.click('#redo');
+  assert.equal(await count(), 2);
+  await page.click('#board');
+  await page.keyboard.press('Control+Z');
+  assert.equal(await count(), 1);
+  await page.keyboard.press('Control+Y');
+  assert.equal(await count(), 2);
+  await page.keyboard.press('Control+Shift+Z');
+  assert.equal(await count(), 3);
+  assert.equal(await page.isDisabled('#redo'), true);
+  assert.deepEqual(errors, []);
+});
+
+test('Vary nudges the patch (and undoes), and Variations exports a zip of WAVs', opts, async (t) => {
+  const { page, errors } = await openApp(t);
+  const before = await page.evaluate(() => window.QuackEngine.serialize(window.QuackApp.getPatch()));
+  await page.click('#vary');
+  const after = await page.evaluate(() => window.QuackEngine.serialize(window.QuackApp.getPatch()));
+  assert.notEqual(after, before);
+  await page.click('#undo');
+  assert.equal(await page.evaluate(() => window.QuackEngine.serialize(window.QuackApp.getPatch())), before);
+
+  await page.click('#variations');
+  await page.fill('.modal [data-field="count"]', '3');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('.modal button[type="submit"]')]);
+  assert.match(download.suggestedFilename(), /-variations\.zip$/);
+  const fs = require('node:fs');
+  const zip = fs.readFileSync(await download.path());
+  assert.equal(zip.readUInt16LE(zip.length - 22 + 10), 3);
+  const data = 30 + zip.readUInt16LE(26); // local header, then the file name
+  assert.match(zip.toString('latin1', 30, data), /-1\.wav$/);
+  assert.equal(zip.toString('latin1', data, data + 4), 'RIFF', 'the first entry is a WAV');
+  assert.deepEqual(errors, []);
+});
+
+test('loop, stop and play previous', opts, async (t) => {
+  const { page, errors } = await openApp(t);
+  assert.equal(await page.isDisabled('#play-prev'), true);
+  await page.check('#loop');
+  await page.click('#create-play');
+  await page.waitForFunction(() => /Peak/.test(document.getElementById('status').textContent));
+  assert.equal(await page.isDisabled('#stop'), false);
+  await page.click('#stop');
+  assert.equal(await page.isDisabled('#stop'), true);
+  assert.equal(await page.isDisabled('#play-prev'), true);
+  await page.click('#create');
+  assert.equal(await page.isDisabled('#play-prev'), false);
+  await page.click('#play-prev');
+  assert.equal(await page.isDisabled('#stop'), false);
+  await page.click('#stop');
+  assert.deepEqual(errors, []);
+});

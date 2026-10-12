@@ -54,9 +54,48 @@
     }
   }
 
+  /** Saves the patch for the next visit and records it as an undo step. */
   function autosave() {
-    storeSet(STORAGE_KEY, E.serialize(patch));
+    var text = E.serialize(patch);
+    storeSet(STORAGE_KEY, text);
+    if (!restoring) history.record(text);
+    undoBtn.disabled = !history.canUndo();
+    redoBtn.disabled = !history.canRedo();
   }
+
+  // ------------------------------------------------------------ undo / redo
+
+  var history = new window.QuackHistory.History();
+  var restoring = false;
+  var undoBtn = document.getElementById('undo');
+  var redoBtn = document.getElementById('redo');
+
+  function restore(text) {
+    if (text === null) return;
+    restoring = true;
+    try {
+      patch = E.parse(text);
+      if (selectedId && !E.getComponent(patch, selectedId)) selectedId = null;
+      changed();
+    } finally {
+      restoring = false;
+    }
+  }
+
+  function undo() {
+    var text = history.undo();
+    restore(text);
+    setStatus(text === null ? 'Nothing to undo' : 'Undone');
+  }
+
+  function redo() {
+    var text = history.redo();
+    restore(text);
+    setStatus(text === null ? 'Nothing to redo' : 'Redone');
+  }
+
+  undoBtn.addEventListener('click', undo);
+  redoBtn.addEventListener('click', redo);
 
   /** Call after any change to the patch. */
   function changed() {
@@ -406,7 +445,11 @@
       title.removeEventListener('pointermove', move);
       title.removeEventListener('pointerup', up);
       title.removeEventListener('pointercancel', up);
-      autosave();
+      if (c.x !== origX || c.y !== origY) {
+        history.seal();
+        autosave();
+        history.seal();
+      }
     }
     title.addEventListener('pointermove', move);
     title.addEventListener('pointerup', up);
@@ -1110,6 +1153,12 @@
     }
     // Shortcuts inside a scope window act on the scope only.
     if (e.target.closest && e.target.closest('.scope-win')) return;
+    if (mod && (key === 'z' || key === 'y')) {
+      e.preventDefault();
+      if (key === 'y' || e.shiftKey) redo();
+      else undo();
+      return;
+    }
     if (!mod && !e.altKey && (key === 'Delete' || key === 'Backspace')) {
       e.preventDefault();
       deleteComponent(c);
@@ -1420,6 +1469,8 @@
   // ------------------------------------------------------------ sound
 
   var renderCount = 0;
+  var latestRender = null; // kept after edits, unlike lastRender
+  var previousRender = null;
 
   function create() {
     try {
@@ -1427,6 +1478,9 @@
       lastRender = E.render(patch, { taps: true });
       var ms = Math.round(performance.now() - t0);
       lastTaps = lastRender.taps;
+      previousRender = latestRender;
+      latestRender = lastRender;
+      prevBtn.disabled = !previousRender;
       renderCount++;
       var msg = 'Peak ' + lastRender.peak.toFixed(3) + ' (' + ms + ' ms)';
       if (lastRender.peak === 0) {
@@ -1450,22 +1504,58 @@
     }
   }
 
-  function play() {
-    if (!lastRender) return;
+  var playing = null;
+  var loopBox = document.getElementById('loop');
+  var stopBtn = document.getElementById('stop');
+  var prevBtn = document.getElementById('play-prev');
+
+  function stopPlayback() {
+    var node = playing;
+    playing = null;
+    stopBtn.disabled = true;
+    if (node) {
+      try { node.stop(); } catch (e) { /* already stopped */ }
+    }
+  }
+
+  /** Plays a render, replacing whatever is playing. With Loop ticked it repeats until Stop. */
+  function playRender(r) {
+    if (!r) return;
     // Created on first use: browsers only allow audio after a user gesture.
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    var chans = lastRender.channels;
-    var buffer = audioCtx.createBuffer(chans.length, chans[0].length, lastRender.sampleRate);
+    stopPlayback();
+    var chans = r.channels;
+    var buffer = audioCtx.createBuffer(chans.length, chans[0].length, r.sampleRate);
     chans.forEach(function (ch, c) {
       var data = buffer.getChannelData(c);
       for (var i = 0; i < data.length; i++) data[i] = Math.max(-1, Math.min(1, ch[i]));
     });
     var node = audioCtx.createBufferSource();
     node.buffer = buffer;
+    node.loop = loopBox.checked;
     node.connect(audioCtx.destination);
+    node.onended = function () {
+      if (playing === node) stopPlayback();
+    };
+    playing = node;
+    stopBtn.disabled = false;
     node.start();
   }
+
+  function play() {
+    playRender(lastRender);
+  }
+
+  stopBtn.addEventListener('click', stopPlayback);
+  // Play previous: the sound created before the latest one, to compare an edit (A/B).
+  prevBtn.addEventListener('click', function () {
+    playRender(previousRender);
+    setStatus('Playing the previous sound');
+  });
+  loopBox.addEventListener('change', function () {
+    if (playing) playing.loop = loopBox.checked;
+  });
 
   function downloadBlob(data, type, filename) {
     var url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: type }));
@@ -1586,6 +1676,51 @@
     });
   });
 
+  // ------------------------------------------------------------ variations
+
+  var VARY_KEY = 'quack.varyAmount';
+  function varyAmount() {
+    var v = Number(storeGet(VARY_KEY));
+    return isFinite(v) && v > 0 ? v : 5;
+  }
+
+  /** Applies one random variation to the current patch (undo brings the original back). */
+  document.getElementById('vary').addEventListener('click', function () {
+    var amount = varyAmount();
+    patch = window.QuackVariations.vary(patch, { amount: amount / 100 });
+    history.seal();
+    changed();
+    history.seal();
+    setStatus('Varied numbers by up to ±' + amount + '%. Undo to go back.');
+  });
+
+  /** Renders several variations and downloads them as WAV files in one .zip. */
+  document.getElementById('variations').addEventListener('click', function () {
+    showForm('Export variations', [
+      E.num('count', 'How many', 8, { min: 1, max: 100, step: 1 }),
+      E.num('amount', 'Vary numbers by up to ± (%)', varyAmount(), { min: 0, max: 100 })
+    ], function (v) {
+      var count = Math.max(1, Math.min(100, Math.round(Number(v.count) || 1)));
+      var amount = Math.max(0, Number(v.amount) || 0);
+      storeSet(VARY_KEY, String(amount));
+      var base = safeName(E.getRecorder(patch).props.filename || 'quack', 'quack');
+      var files = [];
+      try {
+        for (var i = 0; i < count; i++) {
+          var r = E.render(window.QuackVariations.vary(patch, { amount: amount / 100 }));
+          var n = String(i + 1);
+          while (n.length < String(count).length) n = '0' + n;
+          files.push({ name: base + '-' + n + '.wav', data: window.QuackWav.encodeWav(r.channels, r.sampleRate, r.bits) });
+        }
+      } catch (err) {
+        setStatus('Could not create the variations: ' + err.message, true);
+        return;
+      }
+      downloadBlob(new Blob([window.QuackZip.zip(files)], { type: 'application/zip' }), 'application/zip', base + '-variations.zip');
+      setStatus('Exported ' + count + ' variations as ' + base + '-variations.zip');
+    });
+  });
+
   // ------------------------------------------------------------ files
 
   document.getElementById('new').addEventListener('click', function () {
@@ -1644,6 +1779,7 @@
     redraw: changed
   };
 
+  autosave(); // the starting point for undo
   drawBoard();
   drawPanel();
   drawSideScope();
