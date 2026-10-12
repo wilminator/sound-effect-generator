@@ -45,7 +45,7 @@
       for (var c = 0; c < nch; c++) {
         var s = clip(channels[c][i]);
         if (bits === 8) view.setUint8(off, Math.round((s + 1) * 127.5));
-        else view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        else view.setInt16(off, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
         off += bytes;
       }
     }
