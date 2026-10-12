@@ -1140,7 +1140,8 @@
 
   /**
    * Draws a mono or stereo signal into a canvas from sample `start` at `spp` samples
-   * per pixel, one lane per channel. fixed: the scale is ±1; otherwise it fits the peak.
+   * per pixel, one lane per channel. fixed: the scale is -1..1; otherwise it fits the
+   * signal's own range (so an offset signal fills the lane too).
    */
   function drawSignal(cv, sig, start, spp, fixed) {
     var g = cv.getContext('2d');
@@ -1150,34 +1151,46 @@
     g.fillRect(0, 0, w, h);
     if (!sig) return;
     var lanes = E.isStereo(sig) ? [sig.left, sig.right] : [sig];
-    var max = 1;
+    var lo = -1;
+    var hi = 1;
     if (!fixed) {
-      max = 0;
+      lo = Infinity;
+      hi = -Infinity;
       lanes.forEach(function (d) {
         for (var i = 0; i < d.length; i++) {
-          var a = Math.abs(d[i]);
-          if (a > max) max = a;
+          if (d[i] < lo) lo = d[i];
+          if (d[i] > hi) hi = d[i];
         }
       });
-      if (!(max > 0) || !isFinite(max)) max = 1;
+      if (!isFinite(lo) || !isFinite(hi)) {
+        lo = -1;
+        hi = 1;
+      } else if (hi - lo < 1e-9) {
+        var pad = Math.abs(hi) > 1e-9 ? Math.abs(hi) : 1;
+        lo -= pad;
+        hi += pad;
+      }
     }
     var laneH = h / lanes.length;
     var colors = [cssVar('--accent'), cssVar('--out')];
     var muted = cssVar('--muted');
     g.font = '10px system-ui, sans-serif';
     lanes.forEach(function (d, li) {
-      var mid = li * laneH + laneH / 2;
-      var amp = laneH / 2 - 2;
+      var top = li * laneH + 2;
+      var span = laneH - 4;
       function y(v) {
-        v = v / max;
-        if (v !== v) v = 0;
-        return mid - Math.max(-1, Math.min(1, v)) * amp;
+        var u = (v - lo) / (hi - lo);
+        if (u !== u) u = 0.5;
+        return top + (1 - Math.max(0, Math.min(1, u))) * span;
       }
       g.strokeStyle = cssVar('--border');
       g.lineWidth = 1;
       g.beginPath();
-      g.moveTo(0, Math.round(mid) + 0.5);
-      g.lineTo(w, Math.round(mid) + 0.5);
+      if (lo <= 0 && hi >= 0) {
+        // The zero line.
+        g.moveTo(0, Math.round(y(0)) + 0.5);
+        g.lineTo(w, Math.round(y(0)) + 0.5);
+      }
       if (li > 0) {
         g.moveTo(0, Math.round(li * laneH) + 0.5);
         g.lineTo(w, Math.round(li * laneH) + 0.5);
@@ -1200,14 +1213,14 @@
           var a0 = Math.floor(start + x * spp);
           var a1 = Math.max(a0 + 1, Math.floor(start + (x + 1) * spp));
           if (a0 >= d.length) break;
-          var lo = Infinity;
-          var hi = -Infinity;
+          var mn = Infinity;
+          var mx = -Infinity;
           for (var k = a0; k < a1 && k < d.length; k++) {
-            if (d[k] < lo) lo = d[k];
-            if (d[k] > hi) hi = d[k];
+            if (d[k] < mn) mn = d[k];
+            if (d[k] > mx) mx = d[k];
           }
-          g.moveTo(x + 0.5, y(hi));
-          g.lineTo(x + 0.5, y(lo) + 1);
+          g.moveTo(x + 0.5, y(mx));
+          g.lineTo(x + 0.5, y(mn) + 1);
         }
       }
       g.stroke();
@@ -1217,8 +1230,10 @@
       }
     });
     g.fillStyle = muted;
-    var label = '±' + (Math.round(max * 1000) / 1000);
-    g.fillText(label, w - g.measureText(label).width - 4, 12);
+    var top = formatValue(hi);
+    var bottom = formatValue(lo);
+    g.fillText(top, w - g.measureText(top).width - 4, 11);
+    g.fillText(bottom, w - g.measureText(bottom).width - 4, h - 4);
   }
 
   /** The Recorder scope in the side panel. */
@@ -1479,7 +1494,8 @@
   if (!oggSupported) {
     var oggOption = formatSelect.querySelector('option[value="ogg"]');
     oggOption.disabled = true;
-    oggOption.textContent += ' (not supported in this browser)';
+    oggOption.textContent += ' (unsupported)';
+    oggOption.title = 'This browser cannot encode Ogg Opus';
   }
 
   function loadScript(url) {
@@ -1592,6 +1608,17 @@
     });
     fileInput.value = '';
   });
+
+  // Canvases use the theme colors, so redraw them when the system theme changes.
+  if (window.matchMedia) {
+    var scheme = window.matchMedia('(prefers-color-scheme: dark)');
+    var redrawCanvases = function () {
+      drawSideScope();
+      scopes.forEach(function (s) { redrawScope(s); });
+    };
+    if (scheme.addEventListener) scheme.addEventListener('change', redrawCanvases);
+    else if (scheme.addListener) scheme.addListener(redrawCanvases);
+  }
 
   window.addEventListener('resize', function () {
     drawWires();
