@@ -91,7 +91,7 @@ test('syntax errors name the problem and position', () => {
     ['2pi', /Unexpected letter "p" after a number.* at position 2/],
     ['1.2.3', /second decimal point\) at position 4/],
     ['a = 1', /Unexpected "=".* at position 3/],
-    ['1; 2', /single expression\) at position 2/],
+    ['1; 2', /single expression is allowed\) at position 2/],
     ['1 & 2', /did you mean "&&"/],
     ['atan(1,2)', /exactly one argument at position 7/],
     ['1 )', /Unexpected "\)" at position 3/]
