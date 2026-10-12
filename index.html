@@ -3,26 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quack Generator</title>
+  <title>Quack Sound Effects</title>
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-  <main>
-    <h1>Quack Generator</h1>
-    <button id="quack" class="quack" type="button" title="Shortcut: Space or Q">Quack!</button>
-
-    <div class="row">
-      <label for="preset">Preset</label>
-      <select id="preset"></select>
-      <button id="random" type="button">Randomize</button>
-      <button id="download" type="button">Download WAV</button>
+  <header class="bar">
+    <h1>Quack</h1>
+    <div class="group">
+      <button id="new" type="button">New</button>
+      <button id="open" type="button">Open…</button>
+      <button id="save" type="button">Save</button>
+      <select id="examples" aria-label="Examples"></select>
+      <input id="file" type="file" accept=".json,application/json" hidden>
     </div>
+    <div class="group">
+      <button id="create-play" class="primary" type="button">Create and Play</button>
+      <button id="play" type="button" disabled>Play</button>
+      <select id="format" aria-label="Export format">
+        <option value="wav">WAV</option>
+        <option value="flac">FLAC</option>
+        <option value="mp3">MP3</option>
+        <option value="ogg">OGG</option>
+      </select>
+      <button id="export" type="button" disabled>Export</button>
+    </div>
+    <span id="status" class="status" role="status"></span>
+    <a class="source" href="https://github.com/wilminator/sound-effect-generator" target="_blank" rel="noopener">Source code (AGPL-3.0)</a>
+  </header>
 
-    <form id="controls" class="controls" onsubmit="return false"></form>
-  </main>
+  <nav id="toolbar" class="bar toolbar" aria-label="Add component"></nav>
+
+  <div class="workspace">
+    <div id="board" class="board">
+      <div id="canvas" class="canvas">
+        <svg id="wires" class="wires"></svg>
+      </div>
+    </div>
+    <aside class="side">
+      <section id="panel" class="panel"><p class="hint">Select a component to edit it.</p></section>
+      <section class="panel">
+        <h2>Scope</h2>
+        <canvas id="scope" class="scope" width="560" height="160"></canvas>
+      </section>
+      <section class="panel hint">
+        Drag from a red output dot to a green input dot to connect. Each output feeds
+        one input; use Duplicate when you need the same signal twice.
+      </section>
+    </aside>
+  </div>
 
   <!-- Plain scripts (not modules) so the page also works when opened from disk. -->
-  <script src="src/quack.js"></script>
+  <script src="src/engine.js"></script>
+  <script src="src/flac.js"></script>
+  <script src="src/examples.js"></script>
   <script src="src/app.js"></script>
 </body>
 </html>
