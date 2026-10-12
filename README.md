@@ -22,7 +22,7 @@ Everything else works offline.
 - **Create and Play** renders the patch, plays it and draws it on the scope. If the peak is outside
   0.5–1, the status bar suggests a Recorder volume.
 - **Save** and **Open** store patches as JSON. The current patch is also kept in your browser between visits.
-- **Export** saves the last render as WAV, FLAC, MP3 or OGG:
+- **Export** saves the last render as WAV, FLAC, MP3 or OGG, named after the Recorder's **File name**:
   - WAV and FLAC are built in. FLAC is lossless but stored uncompressed.
   - MP3 uses [lamejs](https://github.com/zhuker/lamejs) and needs a standard MP3 sample rate, such as 22050 or 44100.
   - OGG (Opus) uses the browser's own recorder, where the browser supports it (Firefox does), and takes as long as the sound plays.
@@ -31,44 +31,62 @@ Everything else works offline.
 
 | Group | Components |
 |-------|------------|
-| Sources | Sine, Sawtooth, Square, Noise, Patch |
-| Mixers | Mixer, Modulator, Merger, Sequencer, Music Modulator, Switch, Counter |
-| Envelopes | Sweep, ADSR |
+| Sources | Sine, Sawtooth, Square, Noise, Fourier Wave, WAV Sample, Granular Synth, Math Function, Wave Function, Patch |
+| Mixers | Mixer, Modulator, Merger, Sequencer, Music Modulator, Sample and Hold, Switch, Counter |
+| Envelopes | Sweep, ADSR, Envelope |
 | Filters | Comb Filter, Echo, Fuzz, Moving Average |
+| Stereo | Mono to Stereo Splitter, Mono to Stereo Pan, Stereo to Mono Merger, Stereo to Mono Pan, Stereo to Stereo Cross |
 
-A few of these behave in ways worth knowing:
+They follow the formulas in the original help file. A few are worth knowing about:
 
-- **Noise** has its own **Seed**, saved with the patch, so a patch renders the same sound every time.
-- **Patch** plays another saved patch as a source. Load a `.json` file into it and the patch is stored
-  inside the current one. It renders at the outer patch's sample rate and length, and keeps its own
-  Recorder volume. Patches can nest up to 16 levels deep.
-- **Switch** outputs `In k`, where `k = floor(Select)`. It has 2–64 inputs, and Select can change on any
-  sample, so it can switch as often as you like. With **Wrap around**, `k` cycles back to `In 0` past the last input.
-- **Counter** adds **Step** each time **Trigger** rises from 0 or below to above 0, and a rising **Reset**
-  returns it to its start value. A Trigger that starts above 0 counts once at the start.
-  Counter into Switch steps through a list of signals (see the *Arpeggio* example).
+- **Noise** and **Granular Synth** have their own **Seed**, saved with the patch, so a patch renders the same sound every time.
+- **Math Function** and **Wave Function** take an expression such as `sin(2*pi*440*t)*(1-x)`. The variables are `t` (seconds),
+  `x` (t as a fraction of the duration), `p` (the wave's phase, Wave Function only) and the inputs `a` to `d`. The operators are
+  `+ - * / ^ == != < <= > >= ! && ||`, and the functions are `sin cos tan asin acos atan ln exp log abs sign floor frac sinh cosh tanh
+  asinh acosh atanh`, plus the constant `pi`.
+- **Fourier Wave** builds a wave from up to 4095 harmonics. **Normalise**, **Add series** (`a/n^b`) and **Import** (a text file
+  of `order amplitude phase` lines) edit the list.
+- **WAV Sample** plays an uncompressed WAV file. Unlike the original, the file is stored inside the patch, so saved patches stay portable.
+- **Patch** plays another saved patch as a source. Load a `.json` file into it and the patch is stored inside the current one.
+  It renders at the outer patch's sample rate and length, and keeps its own Recorder volume. Patches can nest up to 16 levels deep.
+- **Switch** outputs `In k`, where `k = floor(Select)`. It has 2–64 inputs, and Select can change on any sample, so it can
+  switch as often as you like. With **Wrap around**, `k` cycles back to `In 0` past the last input.
+- **Counter** adds **Step** each time **Trigger** rises from 0 or below to above 0, and a rising **Reset** returns it to its
+  start value. Counter into Switch steps through a list of signals (see the *Arpeggio* example).
+- **Stereo**: tick **Stereo** on the Recorder for a stereo file. Mono signals play in both channels, and a stereo signal going
+  into a mono input is averaged. Stereo connections are drawn as double lines.
 
-The examples menu has patches built from techniques in the original help file: a siren, wood block,
-tom-tom, whoosh, musical sweep, echoing beeps and an arpeggio.
+The examples menu has patches built from techniques in the original help file: a siren, wood block, tom-tom, whoosh, musical
+sweep, echoing beeps, arpeggio, a Fourier note, a spinning coin and a grain cloud (granular), stereo ping-pong and a math chirp.
 
 ## Tests
 
-The engine (`src/engine.js`, `src/flac.js`, `src/examples.js`) has no browser dependencies and is tested
-with Node's built-in test runner. No install is needed:
-
 ```sh
-npm test
+npm test            # everything
+npm run test:unit   # the core and each module
+npm run test:e2e    # whole patches, exports and the browser UI
 ```
+
+Each module in `src/modules/` has its own unit tests in `test/modules/`. The end-to-end tests render patches built from the
+original help file's techniques, check that ffmpeg decodes the WAV and FLAC exports to the same samples (skipped without
+ffmpeg), and drive the page in headless Chromium with Playwright (skipped unless you `npm install` it).
 
 ## Layout
 
-- `index.html`: the page
-- `src/engine.js`: components, patch rules, rendering, WAV encoding, save and load
-- `src/flac.js`: FLAC encoder
+- `index.html`: the page. It loads every file below with plain `<script>` tags.
+- `src/core/engine.js`: the component registry, patch rules, rendering, save and load. Its header documents how to write a component.
+- `src/core/wav.js`, `src/core/flac.js`: WAV encoding and decoding, FLAC encoding
+- `src/core/expr.js`: the expression language for Math Function and Wave Function
+- `src/modules/`: one file per component. Each registers itself with the engine.
+- `src/quack.js`: the Node entry point, which lists the modules
 - `src/examples.js`: built-in example patches
-- `src/app.js`: patch-board UI and export
-- `src/styles.css`: styles
-- `test/`: unit tests
+- `src/app.js`, `src/styles.css`: the patch-board UI
+- `test/`: unit tests (`core/`, `modules/`) and end-to-end tests (`e2e/`)
+
+### Adding a component
+
+Create `src/modules/<name>.js` (copy `sine.js`), add its name to `MODULES` in `src/quack.js` and a matching `<script>` tag in
+`index.html`, and add `test/modules/<name>.test.js`. A test fails if the module list and the script tags disagree.
 
 ## License
 

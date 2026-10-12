@@ -17,8 +17,9 @@
       <input id="file" type="file" accept=".json,application/json" hidden>
     </div>
     <div class="group">
-      <button id="create-play" class="primary" type="button">Create and Play</button>
-      <button id="play" type="button" disabled>Play</button>
+      <button id="create" type="button" title="Render the sound (and every open scope)">Create</button>
+      <button id="play" type="button" disabled title="Play the last sound you created">Play</button>
+      <button id="create-play" class="primary" type="button" title="Render the sound and play it">Create and Play</button>
       <select id="format" aria-label="Export format">
         <option value="wav">WAV</option>
         <option value="flac">FLAC</option>
@@ -27,6 +28,7 @@
       </select>
       <button id="export" type="button" disabled>Export</button>
     </div>
+    <button id="theme" type="button" title="Switch between automatic, light and dark themes">Theme: Auto</button>
     <span id="status" class="status" role="status"></span>
     <a class="source" href="https://github.com/wilminator/sound-effect-generator" target="_blank" rel="noopener">Source code (AGPL-3.0)</a>
   </header>
@@ -42,19 +44,53 @@
     <aside class="side">
       <section id="panel" class="panel"><p class="hint">Select a component to edit it.</p></section>
       <section class="panel">
-        <h2>Scope</h2>
+        <h2>Recorder scope</h2>
         <canvas id="scope" class="scope" width="560" height="160"></canvas>
       </section>
       <section class="panel hint">
         Drag from a red output dot to a green input dot to connect. Each output feeds
-        one input; use Duplicate when you need the same signal twice.
+        one input; use Duplicate when you need the same signal twice. Right-click (or
+        long-press) a component for Cut, Copy, Paste, Rename and Scope; double lines
+        are stereo connections.
       </section>
     </aside>
   </div>
 
   <!-- Plain scripts (not modules) so the page also works when opened from disk. -->
-  <script src="src/engine.js"></script>
-  <script src="src/flac.js"></script>
+  <script src="src/core/engine.js"></script>
+  <script src="src/core/wav.js"></script>
+  <script src="src/core/flac.js"></script>
+  <script src="src/core/expr.js"></script>
+  <script src="src/modules/sine.js"></script>
+  <script src="src/modules/sawtooth.js"></script>
+  <script src="src/modules/square.js"></script>
+  <script src="src/modules/noise.js"></script>
+  <script src="src/modules/fourier-wave.js"></script>
+  <script src="src/modules/wav-sample.js"></script>
+  <script src="src/modules/granular-synth.js"></script>
+  <script src="src/modules/math-function.js"></script>
+  <script src="src/modules/wave-function.js"></script>
+  <script src="src/modules/patch.js"></script>
+  <script src="src/modules/mixer.js"></script>
+  <script src="src/modules/modulator.js"></script>
+  <script src="src/modules/merger.js"></script>
+  <script src="src/modules/sequencer.js"></script>
+  <script src="src/modules/music-modulator.js"></script>
+  <script src="src/modules/sample-hold.js"></script>
+  <script src="src/modules/switch.js"></script>
+  <script src="src/modules/counter.js"></script>
+  <script src="src/modules/sweep.js"></script>
+  <script src="src/modules/adsr.js"></script>
+  <script src="src/modules/envelope.js"></script>
+  <script src="src/modules/comb-filter.js"></script>
+  <script src="src/modules/echo.js"></script>
+  <script src="src/modules/fuzz.js"></script>
+  <script src="src/modules/moving-average.js"></script>
+  <script src="src/modules/mono-stereo-splitter.js"></script>
+  <script src="src/modules/mono-stereo-pan.js"></script>
+  <script src="src/modules/stereo-mono-merger.js"></script>
+  <script src="src/modules/stereo-mono-pan.js"></script>
+  <script src="src/modules/stereo-cross.js"></script>
   <script src="src/examples.js"></script>
   <script src="src/app.js"></script>
 </body>
