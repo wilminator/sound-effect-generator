@@ -93,7 +93,7 @@ test('syntax errors name the problem and position', () => {
     ['a = 1', /Unexpected "=".* at position 3/],
     ['1; 2', /single expression is allowed\) at position 2/],
     ['1 & 2', /did you mean "&&"/],
-    ['atan(1,2)', /exactly one argument at position 7/],
+    ['atan(1,2)', /exactly one argument\) at position 7/],
     ['1 )', /Unexpected "\)" at position 3/]
   ];
   for (const [src, re] of cases) {
