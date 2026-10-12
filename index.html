@@ -13,6 +13,8 @@
       <button id="new" type="button">New</button>
       <button id="open" type="button">Open…</button>
       <button id="save" type="button">Save</button>
+      <button id="undo" type="button" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <button id="redo" type="button" disabled title="Redo (Ctrl+Y or Ctrl+Shift+Z)">Redo</button>
       <select id="examples" aria-label="Examples"></select>
       <input id="file" type="file" accept=".json,.pm,application/json" hidden>
     </div>
@@ -20,6 +22,9 @@
       <button id="create" type="button" title="Render the sound (and every open scope)">Create</button>
       <button id="play" type="button" disabled title="Play the last sound you created">Play</button>
       <button id="create-play" class="primary" type="button" title="Render the sound and play it">Create and Play</button>
+      <button id="play-prev" type="button" disabled title="Play the sound you created before the latest one, to compare">Play previous</button>
+      <button id="stop" type="button" disabled title="Stop playing">Stop</button>
+      <label class="check" title="Repeat the sound until you press Stop"><input id="loop" type="checkbox"> Loop</label>
       <select id="format" aria-label="Export format">
         <option value="wav">WAV</option>
         <option value="flac">FLAC</option>
@@ -27,6 +32,8 @@
         <option value="ogg">OGG</option>
       </select>
       <button id="export" type="button" disabled>Export</button>
+      <button id="vary" type="button" title="Nudge every typed-in number a little, for a similar but different sound">Vary</button>
+      <button id="variations" type="button" title="Export several varied versions of the sound as WAV files in a .zip">Variations…</button>
     </div>
     <button id="theme" type="button" title="Switch between automatic, light and dark themes">Theme: Auto</button>
     <span id="status" class="status" role="status"></span>
@@ -62,6 +69,9 @@
   <script src="src/core/flac.js"></script>
   <script src="src/core/expr.js"></script>
   <script src="src/core/pm-import.js"></script>
+  <script src="src/core/history.js"></script>
+  <script src="src/core/variations.js"></script>
+  <script src="src/core/zip.js"></script>
   <script src="src/modules/sine.js"></script>
   <script src="src/modules/sawtooth.js"></script>
   <script src="src/modules/square.js"></script>
@@ -87,6 +97,7 @@
   <script src="src/modules/echo.js"></script>
   <script src="src/modules/fuzz.js"></script>
   <script src="src/modules/moving-average.js"></script>
+  <script src="src/modules/filter.js"></script>
   <script src="src/modules/mono-stereo-splitter.js"></script>
   <script src="src/modules/mono-stereo-pan.js"></script>
   <script src="src/modules/stereo-mono-merger.js"></script>

@@ -83,6 +83,7 @@ button.primary { background: var(--accent); color: var(--accent-fg); border-colo
 }
 .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .group-label { color: var(--muted); font-size: 0.85em; }
+.check { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .status { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
 .status.warn { color: var(--error); }
 .source { margin-left: auto; color: var(--muted); font-size: 0.85em; }

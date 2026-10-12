@@ -21,6 +21,13 @@ Everything else works offline.
 - An input with nothing connected uses the value you type for it in the side panel.
 - **Create and Play** renders the patch, plays it and draws it on the scope. If the peak is outside
   0.5–1, the status bar suggests a Recorder volume.
+- **Undo** and **Redo** (Ctrl+Z, and Ctrl+Y or Ctrl+Shift+Z) step back and forward through your edits. Quick edits, like typing
+  a number, count as one step.
+- **Play previous** plays the sound created before the latest one, so you can compare an edit. Tick **Loop** to repeat
+  the sound until you press **Stop**.
+- **Vary** nudges every number you typed in (not connected inputs) by up to ±5%, and gives Noise and Granular Synth new
+  seeds. Undo goes back. **Variations…** exports several varied versions as WAV files in one `.zip`, for sets of
+  similar sounds such as footsteps. You choose how many and by how much, and Vary uses the same amount.
 - **Save** and **Open** store patches as JSON. The current patch is also kept in your browser between visits.
 - **Open** also imports patch maps (`.pm`) saved by the original Quack. It reads Sine, Square, Sawtooth, Noise, Mixer,
   Modulator, Sequencer, Sample and Hold, Sweep, ADSR, Envelope, Echo, Fuzz and Mono to Stereo Pan. A file that uses
@@ -37,7 +44,7 @@ Everything else works offline.
 | Sources | Sine, Sawtooth, Square, Noise, Fourier Wave, WAV Sample, Granular Synth, Math Function, Wave Function, Patch |
 | Mixers | Mixer, Modulator, Merger, Sequencer, Music Modulator, Sample and Hold, Switch, Counter |
 | Envelopes | Sweep, ADSR, Envelope |
-| Filters | Comb Filter, Echo, Fuzz, Moving Average |
+| Filters | Comb Filter, Echo, Fuzz, Moving Average, Filter |
 | Stereo | Mono to Stereo Splitter, Mono to Stereo Pan, Stereo to Mono Merger, Stereo to Mono Pan, Stereo to Stereo Cross |
 
 They follow the formulas in the original help file. A few are worth knowing about:
@@ -56,6 +63,8 @@ They follow the formulas in the original help file. A few are worth knowing abou
   switch as often as you like. With **Wrap around**, `k` cycles back to `In 0` past the last input.
 - **Counter** adds **Step** each time **Trigger** rises from 0 or below to above 0, and a rising **Reset** returns it to its
   start value. Counter into Switch steps through a list of signals (see the *Arpeggio* example).
+- **Filter** is a resonant low-pass, high-pass, band-pass or notch filter. Cutoff (Hz) and Resonance are inputs, so a
+  Sweep or an oscillator can move them. The original Quack had no such filter.
 - **Stereo**: tick **Stereo** on the Recorder for a stereo file. Mono signals play in both channels, and a stereo signal going
   into a mono input is averaged. Stereo connections are drawn as double lines.
 

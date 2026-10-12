@@ -11,7 +11,7 @@ var MODULES = [
   'sine', 'sawtooth', 'square', 'noise', 'fourier-wave', 'wav-sample', 'granular-synth', 'math-function', 'wave-function', 'patch',
   'mixer', 'modulator', 'merger', 'sequencer', 'music-modulator', 'sample-hold', 'switch', 'counter',
   'sweep', 'adsr', 'envelope',
-  'comb-filter', 'echo', 'fuzz', 'moving-average',
+  'comb-filter', 'echo', 'fuzz', 'moving-average', 'filter',
   'mono-stereo-splitter', 'mono-stereo-pan', 'stereo-mono-merger', 'stereo-mono-pan', 'stereo-cross'
 ];
 
