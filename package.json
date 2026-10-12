@@ -6,9 +6,9 @@
   "private": true,
   "repository": "github:wilminator/sound-effect-generator",
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
-    "test:unit": "node --test \"test/core/*.test.js\" \"test/modules/*.test.js\"",
-    "test:e2e": "node --test \"test/e2e/*.test.js\""
+    "test": "node test/run.js",
+    "test:unit": "node test/run.js test/core test/modules",
+    "test:e2e": "node test/run.js test/e2e"
   },
   "devDependencies": {
     "playwright": "1.56.1"
