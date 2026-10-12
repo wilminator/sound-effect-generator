@@ -1600,9 +1600,17 @@
   fileInput.addEventListener('change', function () {
     var f = fileInput.files[0];
     if (!f) return;
-    f.text().then(function (text) {
-      setPatch(E.parse(text));
-      setStatus('Opened ' + f.name);
+    // Patch maps saved by the original Quack (.pm) are converted on the way in.
+    var isPm = /\.pm$/i.test(f.name);
+    (isPm ? f.arrayBuffer() : f.text()).then(function (data) {
+      var warnings = [];
+      if (isPm) {
+        var imported = window.QuackPmImport.importPm(data);
+        warnings = imported.warnings;
+        data = imported.patch;
+      }
+      setPatch(E.parse(data));
+      setStatus((isPm ? 'Imported ' : 'Opened ') + f.name + (warnings.length ? '. ' + warnings.join('. ') : ''));
     }).catch(function (err) {
       setStatus('Could not open ' + f.name + ': ' + err.message, true);
     });
