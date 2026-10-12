@@ -1,0 +1,12 @@
+{
+  "name": "sound-effect-generator",
+  "version": "0.1.0",
+  "description": "Quack sound effect generator using Web Audio",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

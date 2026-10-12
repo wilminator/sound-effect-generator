@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quack Generator</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <main>
+    <h1>Quack Generator</h1>
+    <button id="quack" class="quack" type="button" title="Shortcut: Space or Q">Quack!</button>
+
+    <div class="row">
+      <label for="preset">Preset</label>
+      <select id="preset"></select>
+      <button id="random" type="button">Randomize</button>
+      <button id="download" type="button">Download WAV</button>
+    </div>
+
+    <form id="controls" class="controls" onsubmit="return false"></form>
+  </main>
+
+  <!-- Plain scripts (not modules) so the page also works when opened from disk. -->
+  <script src="src/quack.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
