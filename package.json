@@ -1,0 +1,14 @@
+{
+  "name": "sound-effect-generator",
+  "version": "0.1.0",
+  "description": "A modular sound effect synthesizer in the browser, after the classic Quack Sound Effects Studio",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "repository": "github:wilminator/sound-effect-generator",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
