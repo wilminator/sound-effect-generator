@@ -589,3 +589,35 @@ test('phone layout, themes and visible keyboard focus', opts, async (t) => {
   assert.equal(await page.locator('.menu').count(), 0);
   assert.deepEqual(errors, []);
 });
+
+test('every component can be added, edited in the panel and rendered from the toolbar', opts, async (t) => {
+  const { page, errors } = await openApp(t);
+  const types = await page.evaluate(() => window.QuackEngine.types().filter((x) => x !== 'Recorder'));
+  for (const type of types) {
+    await page.click('#new');
+    await page.locator('#toolbar button', { hasText: new RegExp('^' + type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).click();
+    // The new component is selected; its panel shows the help text and one editor per input and property.
+    const panel = await page.textContent('#panel');
+    assert.ok(panel.includes(type), type + ' panel');
+    const ids = await page.evaluate(() => {
+      const p = window.QuackApp.getPatch();
+      return { c: p.components.find((x) => x.type !== 'Recorder').id, rec: window.QuackEngine.getRecorder(p).id };
+    });
+    await drag(page, `.dot.out[data-out="${ids.c}"]`, `.dot.in[data-to="${ids.rec}"][data-input="signal"]`);
+    await page.click('#create');
+    await page.waitForFunction(() => /Peak|silent|Could not/.test(document.getElementById('status').textContent));
+    assert.doesNotMatch(await page.textContent('#status'), /Could not/, type);
+  }
+  assert.deepEqual(errors, []);
+});
+
+test('Fourier Wave actions run from the panel', opts, async (t) => {
+  const { page, errors } = await openApp(t);
+  await page.selectOption('#examples', 'Note (Fourier)');
+  const id = await page.evaluate(() => window.QuackApp.getPatch().components.find((c) => c.type === 'Fourier Wave').id);
+  await page.evaluate((id) => window.QuackApp.select(id), id);
+  await page.locator('#panel button', { hasText: /^Normalise$/ }).click();
+  const amps = await page.evaluate((id) => window.QuackApp.getPatch().components.find((c) => c.id === id).props.harmonics.map((h) => h.amp), id);
+  assert.ok(amps[0] < 1 && amps[0] > 0.3, 'normalised amplitudes: ' + amps);
+  assert.deepEqual(errors, []);
+});

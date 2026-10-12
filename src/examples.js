@@ -200,7 +200,11 @@
       var p = build();
       var rec = E.getRecorder(p);
       var maxX = 0;
-      p.components.forEach(function (c) { if (c !== rec) maxX = Math.max(maxX, c.x); });
+      p.components.forEach(function (c) {
+        if (c === rec) return;
+        c.x = Math.round(c.x * 1.3); // leave room for wires between nodes
+        maxX = Math.max(maxX, c.x);
+      });
       rec.x = maxX + 200;
       rec.y = 120;
       return p;
