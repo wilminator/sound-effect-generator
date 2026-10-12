@@ -85,7 +85,7 @@
       var sq = add(p, 'Square', 420, 100, { volume: 0.4 });
       E.connect(p, sweep.id, music.id, 'signal');
       E.connect(p, music.id, sq.id, 'freq');
-      E.connect(p, sq.id, recorder(p, { duration: 2 }).id, 'signal');
+      E.connect(p, sq.id, recorder(p, { duration: 2, volume: 2 }).id, 'signal');
       return p;
     },
 
@@ -117,7 +117,78 @@
       E.connect(p, gate.id, counter.id, 'trigger');
       E.connect(p, counter.id, sw.id, 'select');
       E.connect(p, sw.id, osc.id, 'freq');
-      E.connect(p, osc.id, recorder(p, { duration: 2 }).id, 'signal');
+      E.connect(p, osc.id, recorder(p, { duration: 2, volume: 2 }).id, 'signal');
+      return p;
+    },
+
+    'Note (Fourier)': function () {
+      // note1.pm: a Fourier wave with a light 10 Hz tremolo, shaped by an ADSR.
+      var p = E.createPatch();
+      var trem = add(p, 'Sine', 40, 40, { freq: 10, volume: 0.1, offset: 0.9 });
+      var wave = add(p, 'Fourier Wave', 220, 100, { freq: 330 }, {
+        harmonics: [
+          { order: 1, amp: 1, phase: 0 }, { order: 2, amp: 0.5, phase: 0 }, { order: 3, amp: 0.3, phase: 0 },
+          { order: 4, amp: 0.2, phase: 0 }, { order: 5, amp: 0.1, phase: 0 }
+        ]
+      });
+      var env = add(p, 'ADSR', 400, 100, {}, { attack: 0.05, decay: 0.2, sustain: 0.6, release: 0.3 });
+      E.connect(p, trem.id, wave.id, 'volume');
+      E.connect(p, wave.id, env.id, 'signal');
+      E.connect(p, env.id, recorder(p, { duration: 1.5, volume: 0.5 }).id, 'signal');
+      return p;
+    },
+
+    'Spinning coin': function () {
+      // grain1.pm: distinct high grains whose gap sweeps from 0.1 s down to 0.01 s.
+      var p = E.createPatch();
+      var tone = add(p, 'Sine', 40, 40, { freq: 3000 });
+      var gap = add(p, 'Sweep', 40, 200, {}, { from: 0.1, to: 0.01 });
+      var grains = add(p, 'Granular Synth', 240, 100, { duration: 0.2, volume: 0.5 },
+        { sourceDuration: 1, shape: 'Attack/Decay', control: 0.05, seed: 7 });
+      E.connect(p, tone.id, grains.id, 'signal');
+      E.connect(p, gap.id, grains.id, 'gap');
+      E.connect(p, grains.id, recorder(p, { duration: 3, volume: 0.6 }).id, 'signal');
+      return p;
+    },
+
+    'Grain cloud': function () {
+      // grain2.pm: Gaussian grains drawn from anywhere in a sine stepping through 5 pitches.
+      var p = E.createPatch();
+      var steps = add(p, 'Envelope', 40, 40, {}, {
+        sections: [440, 587, 349, 659, 523].map(function (f) {
+          return { start: f, sameAsPrevious: false, end: f, duration: 0.2, curve: 'Linear', degree: 3 };
+        })
+      });
+      var tone = add(p, 'Sine', 200, 40);
+      var grains = add(p, 'Granular Synth', 360, 100, { gap: 0.001, duration: 0.1, volume: 0.05, pos: 0.5, posR: 0.5 },
+        { sourceDuration: 1, shape: 'Gaussian', control: 0.5, seed: 11 });
+      E.connect(p, steps.id, tone.id, 'freq');
+      E.connect(p, tone.id, grains.id, 'signal');
+      E.connect(p, grains.id, recorder(p, { duration: 2 }).id, 'signal');
+      return p;
+    },
+
+    'Stereo ping-pong': function () {
+      // Beeps panned hard left and right by a 0/1 gate, into a stereo Recorder.
+      var p = E.createPatch();
+      var tone = add(p, 'Sine', 40, 40, { freq: 880 });
+      var env = add(p, 'ADSR', 200, 40, {}, { attack: 0.005, decay: 0.12, sustain: 0, release: 0 });
+      var seq = add(p, 'Sequencer', 360, 40, {}, { startA: 0, endA: 0.25, repeatA: true });
+      var gate = add(p, 'Square', 360, 260, { freq: 2, volume: 0.5, offset: 0.5 });
+      var pan = add(p, 'Mono to Stereo Pan', 560, 120);
+      E.connect(p, tone.id, env.id, 'signal');
+      E.connect(p, env.id, seq.id, 'sigA');
+      E.connect(p, seq.id, pan.id, 'signal');
+      E.connect(p, gate.id, pan.id, 'pan');
+      E.connect(p, pan.id, recorder(p, { duration: 2, stereo: true, volume: 0.8 }).id, 'signal');
+      return p;
+    },
+
+    'Math chirp': function () {
+      // A Math Function: a falling-volume chirp from 200 to 600 Hz.
+      var p = E.createPatch();
+      var f = add(p, 'Math Function', 200, 120, {}, { expr: 'sin(2*pi*(200+200*x)*t)*(1-x)' });
+      E.connect(p, f.id, recorder(p, { duration: 1, volume: 0.9 }).id, 'signal');
       return p;
     }
   };

@@ -5,7 +5,7 @@
 })(typeof self !== 'undefined' ? self : this, function (E) {
   'use strict';
 
-  E.register('Stereo Cross', {
+  E.register('Stereo to Stereo Cross', {
     group: 'Stereo',
     help: 'Cross-mixes the channels of a stereo signal with a 2x2 matrix (swap, collapse, balance).',
     inputs: [

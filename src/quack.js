@@ -8,10 +8,11 @@
 var E = require('./core/engine.js');
 
 var MODULES = [
-  'sine', 'sawtooth', 'square', 'noise', 'patch',
-  'mixer', 'modulator', 'merger', 'sequencer', 'music-modulator', 'switch', 'counter',
-  'sweep', 'adsr',
-  'comb-filter', 'echo', 'fuzz', 'moving-average'
+  'sine', 'sawtooth', 'square', 'noise', 'fourier-wave', 'wav-sample', 'granular-synth', 'math-function', 'wave-function', 'patch',
+  'mixer', 'modulator', 'merger', 'sequencer', 'music-modulator', 'sample-hold', 'switch', 'counter',
+  'sweep', 'adsr', 'envelope',
+  'comb-filter', 'echo', 'fuzz', 'moving-average',
+  'mono-stereo-splitter', 'mono-stereo-pan', 'stereo-mono-merger', 'stereo-mono-pan', 'stereo-cross'
 ];
 
 MODULES.forEach(function (name) {

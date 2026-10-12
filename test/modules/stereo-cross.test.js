@@ -4,7 +4,7 @@ const { E, SR, close, single } = require('../helpers.js');
 require('../../src/modules/mono-stereo-splitter.js');
 require('../../src/modules/stereo-cross.js');
 
-const T = 'Stereo Cross';
+const T = 'Stereo to Stereo Cross';
 
 function withSource(l, r, inputs) {
   const p = E.createPatch();

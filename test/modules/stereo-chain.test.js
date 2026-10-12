@@ -34,7 +34,7 @@ test('splitter then cross swaps the channels', () => {
   const a = E.render(build(true, ['Mono to Stereo Splitter', { left: 1, right: 0.25 }]));
   const b = E.render(build(true,
     ['Mono to Stereo Splitter', { left: 1, right: 0.25 }],
-    ['Stereo Cross', { leftToLeft: 0, leftToRight: 1, rightToLeft: 1, rightToRight: 0 }]));
+    ['Stereo to Stereo Cross', { leftToLeft: 0, leftToRight: 1, rightToLeft: 1, rightToRight: 0 }]));
   for (let i = 0; i < a.channels[0].length; i++) {
     assert.ok(close(b.channels[0][i], a.channels[1][i]));
     assert.ok(close(b.channels[1][i], a.channels[0][i]));

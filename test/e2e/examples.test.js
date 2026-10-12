@@ -19,3 +19,16 @@ test('a saved patch keeps nested patches and Switch inputs', () => {
   assert.deepEqual(q.components, p.components);
   assert.deepEqual(q.connections, p.connections);
 });
+
+test('every example peaks between 0.5 and 1, so none needs a volume hint', () => {
+  for (const [name, build] of Object.entries(EXAMPLES)) {
+    const r = E.render(build());
+    assert.equal(r.suggestedVolume, null, name + ' peaks at ' + r.peak);
+  }
+});
+
+test('the examples use every component group, including stereo', () => {
+  const used = new Set();
+  for (const build of Object.values(EXAMPLES)) for (const c of build().components) used.add(E.TYPES[c.type].group);
+  for (const g of E.GROUPS) assert.ok(used.has(g), g);
+});
