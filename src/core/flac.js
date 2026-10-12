@@ -1,5 +1,5 @@
 /*
- * Minimal FLAC encoder: mono, 8- or 16-bit, VERBATIM subframes.
+ * Minimal FLAC encoder: 1 or 2 channels, 8- or 16-bit, VERBATIM subframes.
  * The output is a valid, lossless FLAC file, but it isn't compressed; every frame
  * stores its samples as-is. No libraries needed, so it works offline.
  */
@@ -46,11 +46,14 @@
     return s < 0 ? Math.round(s * (max + 1)) : Math.round(s * max);
   }
 
-  /** Encodes mono float samples (±1) as a FLAC file. bits is 8 or 16. */
-  function encodeFlac(samples, sampleRate, bits) {
+  /** Encodes channels (an array of 1 or 2 Float32Arrays, ±1) as a FLAC file. bits is 8 or 16. */
+  function encodeFlac(channels, sampleRate, bits) {
+    if (channels instanceof Float32Array) channels = [channels];
+    if (channels.length < 1 || channels.length > 2) throw new Error('FLAC export supports 1 or 2 channels');
     bits = bits === 8 ? 8 : 16;
     var bytesPer = bits / 8;
-    var total = samples.length;
+    var nch = channels.length;
+    var total = channels[0].length;
     var frames = Math.ceil(total / BLOCK_SIZE);
     var out = [];
 
@@ -62,7 +65,7 @@
     out.push(
       (sampleRate >> 12) & 0xff,
       (sampleRate >> 4) & 0xff,
-      ((sampleRate & 0xf) << 4) | (0 << 1) | ((bits - 1) >> 4),
+      ((sampleRate & 0xf) << 4) | ((nch - 1) << 1) | ((bits - 1) >> 4),
       (((bits - 1) & 0xf) << 4) | hi,
       (total >>> 24) & 0xff, (total >>> 16) & 0xff, (total >>> 8) & 0xff, total & 0xff
     );
@@ -74,16 +77,18 @@
       var frame = [
         0xff, 0xf8, // sync code, fixed block size
         0x70, // block size: 16-bit (size-1) at end of header; sample rate: from STREAMINFO
-        (0 << 4) | ((bits === 8 ? 1 : 4) << 1) // mono; 8 or 16 bits per sample
+        ((nch - 1) << 4) | ((bits === 8 ? 1 : 4) << 1) // independent channels; 8 or 16 bits
       ];
       frame = frame.concat(utf8Number(f));
       frame.push((size - 1) >> 8, (size - 1) & 0xff);
       frame.push(crc8(frame, 0, frame.length));
-      frame.push(0x02); // VERBATIM subframe, no wasted bits
-      for (var i = 0; i < size; i++) {
-        var v = toInt(samples[start + i], bits);
-        if (bytesPer === 2) frame.push((v >> 8) & 0xff, v & 0xff);
-        else frame.push(v & 0xff);
+      for (var c = 0; c < nch; c++) {
+        frame.push(0x02); // VERBATIM subframe, no wasted bits
+        for (var i = 0; i < size; i++) {
+          var v = toInt(channels[c][start + i], bits);
+          if (bytesPer === 2) frame.push((v >> 8) & 0xff, v & 0xff);
+          else frame.push(v & 0xff);
+        }
       }
       var crc = crc16(frame, 0, frame.length);
       frame.push(crc >> 8, crc & 0xff);

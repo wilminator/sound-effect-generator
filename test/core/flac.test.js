@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { encodeFlac, crc8, crc16, BLOCK_SIZE } = require('../src/flac.js');
+const { encodeFlac, crc8, crc16, BLOCK_SIZE } = require('../../src/core/flac.js');
 
 const HEADER = 4 + 4 + 34; // "fLaC" + metadata block header + STREAMINFO
 
@@ -64,4 +64,22 @@ test('samples are stored big-endian, signed and clipped', () => {
   const v8 = new DataView(f8.buffer);
   assert.equal(v8.getInt8(first), 127);
   assert.equal(v8.getInt8(first + 1), -128);
+});
+
+test('stereo FLAC stores two verbatim subframes per frame', () => {
+  const left = new Float32Array(10).fill(0.5);
+  const right = new Float32Array(10).fill(-0.5);
+  const flac = encodeFlac([left, right], 8000, 16);
+  const v = new DataView(flac.buffer);
+  assert.equal((v.getUint32(18) >>> 9) & 0x7, 1); // 2 channels in STREAMINFO
+  const at = HEADER;
+  assert.equal(flac[at + 3] >> 4, 1); // channel assignment: 2 independent channels
+  const first = at + 8;
+  assert.equal(flac[first], 0x02);
+  assert.equal(v.getInt16(first + 1), Math.round(0.5 * 32767));
+  const second = first + 1 + 20;
+  assert.equal(flac[second], 0x02);
+  assert.equal(v.getInt16(second + 1), -16384);
+  assert.equal(flac.length, HEADER + 4 + 1 + 2 + 1 + 2 * (1 + 20) + 2);
+  assert.throws(() => encodeFlac([left, right, left], 8000, 16), /1 or 2 channels/);
 });

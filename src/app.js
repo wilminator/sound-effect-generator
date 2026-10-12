@@ -358,6 +358,13 @@
             c.props[p.key] = typeof p.default === 'number' ? Number(control.value) : control.value;
             changed();
           });
+        } else if (p.type === 'text') {
+          control = el('input', { type: 'text' });
+          control.value = c.props[p.key];
+          control.addEventListener('change', function () {
+            c.props[p.key] = control.value;
+            changed();
+          });
         } else if (p.type === 'bool') {
           control = el('input', { type: 'checkbox' });
           control.checked = !!c.props[p.key];
@@ -463,7 +470,7 @@
       }
       playBtn.disabled = false;
       exportBtn.disabled = false;
-      drawScope(lastRender.samples);
+      drawScope(lastRender.channels[0]);
       return true;
     } catch (err) {
       setStatus('Could not create the sound: ' + err.message, true);
@@ -476,9 +483,12 @@
     // Created on first use: browsers only allow audio after a user gesture.
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    var buffer = audioCtx.createBuffer(1, lastRender.samples.length, lastRender.sampleRate);
-    var data = buffer.getChannelData(0);
-    for (var i = 0; i < data.length; i++) data[i] = Math.max(-1, Math.min(1, lastRender.samples[i]));
+    var chans = lastRender.channels;
+    var buffer = audioCtx.createBuffer(chans.length, chans[0].length, lastRender.sampleRate);
+    chans.forEach(function (ch, c) {
+      var data = buffer.getChannelData(c);
+      for (var i = 0; i < data.length; i++) data[i] = Math.max(-1, Math.min(1, ch[i]));
+    });
     var node = audioCtx.createBufferSource();
     node.buffer = buffer;
     node.connect(audioCtx.destination);
@@ -567,11 +577,15 @@
     }
     var ready = window.lamejs ? Promise.resolve() : loadScript(MP3_URL);
     return ready.then(function () {
-      var enc = new window.lamejs.Mp3Encoder(1, r.sampleRate, 128);
-      var pcm = toInt16(r.samples);
+      var stereo = r.channels.length === 2;
+      var enc = new window.lamejs.Mp3Encoder(r.channels.length, r.sampleRate, 128);
+      var pcm = toInt16(r.channels[0]);
+      var pcmR = stereo ? toInt16(r.channels[1]) : null;
       var chunks = [];
       for (var i = 0; i < pcm.length; i += 1152) {
-        var buf = enc.encodeBuffer(pcm.subarray(i, i + 1152));
+        var buf = stereo
+          ? enc.encodeBuffer(pcm.subarray(i, i + 1152), pcmR.subarray(i, i + 1152))
+          : enc.encodeBuffer(pcm.subarray(i, i + 1152));
         if (buf.length) chunks.push(new Uint8Array(buf));
       }
       var end = enc.flush();
@@ -584,8 +598,8 @@
   // sound silently into a recorder and takes as long as the sound itself.
   function encodeOgg(r) {
     var ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-    var buffer = ctx.createBuffer(1, r.samples.length, r.sampleRate);
-    buffer.getChannelData(0).set(r.samples);
+    var buffer = ctx.createBuffer(r.channels.length, r.channels[0].length, r.sampleRate);
+    r.channels.forEach(function (ch, c) { buffer.getChannelData(c).set(ch); });
     var src = ctx.createBufferSource();
     src.buffer = buffer;
     var dest = ctx.createMediaStreamDestination();
@@ -609,15 +623,16 @@
     if (!r) return;
     var format = formatSelect.value;
     var job;
-    if (format === 'wav') job = Promise.resolve(new Blob([E.encodeWav(r.samples, r.sampleRate, r.bits)], { type: 'audio/wav' }));
-    else if (format === 'flac') job = Promise.resolve(new Blob([window.QuackFlac.encodeFlac(r.samples, r.sampleRate, r.bits)], { type: 'audio/flac' }));
+    if (format === 'wav') job = Promise.resolve(new Blob([window.QuackWav.encodeWav(r.channels, r.sampleRate, r.bits)], { type: 'audio/wav' }));
+    else if (format === 'flac') job = Promise.resolve(new Blob([window.QuackFlac.encodeFlac(r.channels, r.sampleRate, r.bits)], { type: 'audio/flac' }));
     else if (format === 'mp3') job = encodeMp3(r);
     else job = encodeOgg(r);
     exportBtn.disabled = true;
     setStatus('Exporting ' + format.toUpperCase() + '…');
     job.then(function (blob) {
-      downloadBlob(blob, blob.type, 'quack.' + format);
-      setStatus('Exported quack.' + format);
+      var name = (String(E.getRecorder(patch).props.filename || 'quack').replace(/[\\/:*?"<>|]+/g, '').trim() || 'quack') + '.' + format;
+      downloadBlob(blob, blob.type, name);
+      setStatus('Exported ' + name);
     }).catch(function (err) {
       setStatus('Could not export ' + format.toUpperCase() + ': ' + err.message, true);
     }).then(function () {

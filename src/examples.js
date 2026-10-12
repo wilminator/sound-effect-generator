@@ -4,7 +4,7 @@
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('./engine.js'));
+    module.exports = factory(require('./quack.js'));
   } else {
     root.QuackExamples = factory(root.QuackEngine);
   }
