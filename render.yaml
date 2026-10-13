@@ -1,0 +1,23 @@
+# Render Blueprint: hosts the app as a free Static Site.
+# There is no build step; Render serves the repository root as is.
+services:
+  - type: web
+    name: sound-effect-generator
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: ./
+    headers:
+      # Scripts only from this site, plus the pinned MP3 encoder on jsDelivr.
+      # No inline scripts or event handlers are allowed; the app uses neither.
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: no-referrer
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=()"
