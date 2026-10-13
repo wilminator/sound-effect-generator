@@ -42,7 +42,7 @@ test('Blobs Cast 2: Recorder, positions, sequencer, echo and wiring', () => {
   assert.equal(rec.props.bits, 16);
   assert.equal(rec.props.stereo, false);
   assert.ok(close(rec.props.duration, 1.75));
-  assert.equal(rec.props.filename, 'quack');
+  assert.equal(rec.props.filename, 'segway');
 
   const seq = byName(p, 'Seq1');
   assert.deepEqual([seq.props.startB, seq.props.endB, seq.props.repeatB], [0.25, 0.5, false]);

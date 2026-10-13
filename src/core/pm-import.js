@@ -129,7 +129,7 @@
         inputs: { signal: o.values[0] },
         props: {
           volume: q.volume, duration: q.duration, sampleRate: q.rate,
-          bits: q.bits16 ? 16 : 8, stereo: q.stereo, filename: file || 'quack'
+          bits: q.bits16 ? 16 : 8, stereo: q.stereo, filename: file || 'segway'
         }
       };
     }),

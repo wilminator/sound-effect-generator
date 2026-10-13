@@ -1,5 +1,5 @@
 /*
- * Quack expression language (Math Function and Wave Function).
+ * SEGway expression language (Math Function and Wave Function).
  * compile(text, allowedVars) parses once into a tree of closures and returns fn(vars),
  * where vars is an object of single-letter variables (letters not set count as 0).
  * No eval and no new Function: user text is never executed as JavaScript.
