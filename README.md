@@ -1,6 +1,6 @@
-# Sound Effect Generator
+# SEGway
 
-A modular sound effect synthesizer that runs in the browser, modelled on the classic
+SEGway (Sound Effect Generator) is a modular sound effect synthesizer that runs in the browser, inspired by the classic
 Windows program *Quack Sound Effects Studio*. You place components on a patch board,
 wire them together, and render the result offline to a sound file.
 

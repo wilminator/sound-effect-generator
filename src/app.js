@@ -1680,7 +1680,7 @@
     exportBtn.disabled = true;
     setStatus('Exporting ' + format.toUpperCase() + '…');
     job.then(function (blob) {
-      var name = safeName(E.getRecorder(patch).props.filename || 'quack', 'quack') + '.' + format;
+      var name = safeName(E.getRecorder(patch).props.filename || 'segway', 'segway') + '.' + format;
       downloadBlob(blob, blob.type, name);
       setStatus('Exported ' + name);
     }).catch(function (err) {
@@ -1717,7 +1717,7 @@
       var count = Math.max(1, Math.min(100, Math.round(Number(v.count) || 1)));
       var amount = Math.max(0, Number(v.amount) || 0);
       storeSet(VARY_KEY, String(amount));
-      var base = safeName(E.getRecorder(patch).props.filename || 'quack', 'quack');
+      var base = safeName(E.getRecorder(patch).props.filename || 'segway', 'segway');
       var files = [];
       try {
         for (var i = 0; i < count; i++) {

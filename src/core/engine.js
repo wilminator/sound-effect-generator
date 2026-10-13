@@ -1,5 +1,5 @@
 /*
- * Quack core engine: the component registry, patch rules, and offline rendering.
+ * SEGway core engine: the component registry, patch rules, and offline rendering.
  * No DOM or Web Audio dependencies, so it runs in the browser (as window.QuackEngine)
  * and in Node (via require) for tests.
  *
@@ -354,7 +354,7 @@
 
   function addCustom(patch, ccf, x, y) {
     var data = typeof ccf === 'string' ? JSON.parse(ccf) : ccf;
-    if (!data || !data.quackCustomComponent || !TYPES[data.type]) throw new Error('Not a Quack custom component');
+    if (!data || !data.quackCustomComponent || !TYPES[data.type]) throw new Error('Not a SEGway custom component');
     var c = addComponent(patch, data.type, x, y);
     Object.keys(data.props || {}).forEach(function (k) {
       if (k in c.props) c.props[k] = deepCopy(data.props[k]);
@@ -451,7 +451,7 @@
   /** Parses a saved patch, filling defaults and dropping invalid connections. */
   function parse(text) {
     var data = typeof text === 'string' ? JSON.parse(text) : text;
-    if (!data || !Array.isArray(data.components)) throw new Error('Not a Quack patch');
+    if (!data || !Array.isArray(data.components)) throw new Error('Not a SEGway patch');
     var patch = { version: 1, nextId: 1, components: [], connections: [] };
     var maxId = 0;
     data.components.forEach(function (c) {
@@ -531,7 +531,7 @@
       num('sampleRate', 'Samples/sec', 22050, { min: 4000, max: 192000, step: 1 }),
       { key: 'bits', label: 'Bits/sample', type: 'select', options: [8, 16], default: 16 },
       { key: 'stereo', label: 'Stereo', type: 'bool', default: false },
-      { key: 'filename', label: 'File name', type: 'text', default: 'quack' }
+      { key: 'filename', label: 'File name', type: 'text', default: 'segway' }
     ],
     noOutput: true,
     stereoOutput: function (c) { return !!c.props.stereo; },

@@ -70,7 +70,7 @@ test('build a patch by hand, render it and export a WAV', opts, async (t) => {
 
   await page.selectOption('#format', 'wav');
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#export')]);
-  assert.equal(download.suggestedFilename(), 'quack.wav');
+  assert.equal(download.suggestedFilename(), 'segway.wav');
   const fs = require('node:fs');
   const wav = decodeWav(fs.readFileSync(await download.path()));
   assert.equal(wav.sampleRate, 22050);
