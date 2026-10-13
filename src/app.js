@@ -377,7 +377,7 @@
     });
     drawWires();
     if (focusedNode && selectedId) {
-      var again = canvas.querySelector('.node[data-id="' + selectedId + '"]');
+      var again = canvas.querySelector('.node[data-id="' + cssEscape(selectedId) + '"]');
       if (again) again.focus();
     }
   }
@@ -394,6 +394,16 @@
     return { x: r.left + r.width / 2 - base.left, y: r.top + r.height / 2 - base.top };
   }
 
+  // Component ids come from patch files, so they are escaped before going into selectors or markup.
+  function cssEscape(v) {
+    v = String(v);
+    return typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(v) : v.replace(/[^\w-]/g, '\\$&');
+  }
+
+  function escapeAttr(v) {
+    return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function wirePath(a, b) {
     var dx = Math.max(40, Math.abs(b.x - a.x) / 2);
     return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y + ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
@@ -402,15 +412,15 @@
   // Stereo connections are drawn as double lines: a wide stroke with a thin gap on top.
   function drawWires(temp) {
     var paths = patch.connections.map(function (k) {
-      var outDot = canvas.querySelector('.dot.out[data-out="' + k.from + '"]');
-      var inDot = canvas.querySelector('.dot.in[data-to="' + k.to + '"][data-input="' + k.input + '"]');
+      var outDot = canvas.querySelector('.dot.out[data-out="' + cssEscape(k.from) + '"]');
+      var inDot = canvas.querySelector('.dot.in[data-to="' + cssEscape(k.to) + '"][data-input="' + cssEscape(k.input) + '"]');
       if (!outDot || !inDot) return '';
       var d = wirePath(dotCenter(outDot), dotCenter(inDot));
       var from = E.getComponent(patch, k.from);
       if (from && isStereoOut(from)) {
-        return '<g class="wire stereo" data-from="' + k.from + '"><path class="rail" d="' + d + '"/><path class="gap" d="' + d + '"/></g>';
+        return '<g class="wire stereo" data-from="' + escapeAttr(k.from) + '"><path class="rail" d="' + d + '"/><path class="gap" d="' + d + '"/></g>';
       }
-      return '<path class="wire mono" data-from="' + k.from + '" d="' + d + '"/>';
+      return '<path class="wire mono" data-from="' + escapeAttr(k.from) + '" d="' + d + '"/>';
     });
     if (temp) paths.push('<path class="temp" d="' + wirePath(temp.a, temp.b) + '"/>');
     wires.innerHTML = paths.join('');
@@ -1577,6 +1587,8 @@
   // ------------------------------------------------------------ export
 
   var MP3_URL = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js';
+  // Subresource Integrity: the browser refuses the file if the CDN ever serves different bytes.
+  var MP3_INTEGRITY = 'sha384-xuasJXVcyv3hZq0eYpelEkBC8l4yufatZXDsKuyCU2rqfhDCb+ftuE/mSfZAteiK';
   var MP3_RATES = [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000];
   var OGG_TYPE = 'audio/ogg;codecs=opus';
   var oggSupported = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(OGG_TYPE);
@@ -1588,10 +1600,12 @@
     oggOption.title = 'This browser cannot encode Ogg Opus';
   }
 
-  function loadScript(url) {
+  function loadScript(url, integrity) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement('script');
       s.src = url;
+      s.integrity = integrity;
+      s.crossOrigin = 'anonymous';
       s.onload = resolve;
       s.onerror = function () { reject(new Error('could not load the MP3 encoder (are you offline?)')); };
       document.head.appendChild(s);
@@ -1611,7 +1625,7 @@
     if (MP3_RATES.indexOf(r.sampleRate) < 0) {
       return Promise.reject(new Error('MP3 needs one of these sample rates: ' + MP3_RATES.join(', ')));
     }
-    var ready = window.lamejs ? Promise.resolve() : loadScript(MP3_URL);
+    var ready = window.lamejs ? Promise.resolve() : loadScript(MP3_URL, MP3_INTEGRITY);
     return ready.then(function () {
       var stereo = r.channels.length === 2;
       var enc = new window.lamejs.Mp3Encoder(r.channels.length, r.sampleRate, 128);
